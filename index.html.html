@@ -1,14 +1,3 @@
-<!-- 
-    Group Decision Facilitator
-    An interactive web platform to simulate group decision-making.
-    Features:
-    - Define group members with optional weighted influence (1-10).
-    - Propose decision options.
-    - Facilitate voting with a customizable consensus threshold.
-    - Visualize results with a bar chart and export as PNG.
-    Purpose: Explore group dynamics, test voting rules, or assist small-scale decisions.
-    Written by Azeez Adewale Hamzat.
--->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,61 +10,176 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- html2canvas for export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Particles.js CDN for background effect -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <style>
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        .slide-up { animation: slideUp 0.7s ease-out; }
+        .pulse { animation: pulse 1.5s infinite ease-in-out; }
         .hidden { display: none; }
+        /* Custom styles for particles and theme */
+        body {
+            background: linear-gradient(135deg, #f0f4f8, #e0e7ff);
+            overflow-x: hidden;
+            position: relative;
+        }
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0.3;
+        }
+        .card {
+            background: linear-gradient(135deg, #ffffff, #f9fafb);
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.1);
+        }
+        .input-field:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            outline: none;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #10b981, #34d399);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #059669, #34d399);
+        }
+        .btn-secondary {
+            background: linear-gradient(45deg, #6b7280, #9ca3af);
+        }
+        .btn-secondary:hover {
+            background: linear-gradient(45deg, #4b5563, #6b7280);
+        }
+        .btn-export {
+            background: linear-gradient(45deg, #9333ea, #a855f7);
+        }
+        .btn-export:hover {
+            background: linear-gradient(45deg, #7e22ce, #9333ea);
+        }
+        canvas {
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+        }
     </style>
 </head>
-<body class="bg-gray-100 font-sans p-6 max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Group Decision Facilitator</h1>
+<body class="font-sans p-6 max-w-4xl mx-auto relative">
+    <!-- Particle Background -->
+    <div id="particles-js"></div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+    <!-- Header with Enhanced Design -->
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-yellow-400 mb-4 slide-up">Group Decision Facilitator</h1>
+        <p class="text-lg text-gray-600">A tool by <strong class="text-green-600">Azeez Adewale Hamzat</strong> to harness collective wisdom</p>
+    </header>
+
+    <!-- Instructions Section -->
+    <div class="card p-6 mb-6 slide-up">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Instructions</h2>
+        <p class="text-gray-600 mb-4">
+            This interactive platform simulates group decision-making with elegance and precision. Explore group dynamics, test voting strategies, or support real-world decisions in communities and teams. Crafted by <strong class="text-green-600">Azeez Adewale Hamzat</strong>.
+        </p>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">Features:</h3>
+        <ul class="list-disc list-inside text-gray-600 mb-4 space-y-2">
+            <li class="flex items-center gap-2"><i class="fas fa-users text-green-500"></i> Define members with weighted influence (1-10).</li>
+            <li class="flex items-center gap-2"><i class="fas fa-lightbulb text-yellow-500"></i> Propose decision options flexibly.</li>
+            <li class="flex items-center gap-2"><i class="fas fa-vote-yea text-blue-500"></i> Facilitate voting with a customizable consensus threshold (default 75%).</li>
+            <li class="flex items-center gap-2"><i class="fas fa-chart-bar text-purple-500"></i> Visualize results with a bar chart and export as PNG.</li>
+        </ul>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">Purpose:</h3>
+        <p class="text-gray-600">
+            Empower groups to make informed decisions collectively, blending data and intuition for sustainable outcomes.
+        </p>
+    </div>
+
+    <!-- Add Group Members Section -->
+    <div class="card p-6 mb-6 slide-up">
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Add Group Members</h2>
+        <p class="text-gray-500 text-sm mb-2">Enter names with optional weights (1-10) to reflect influence (e.g., "Fatima" with weight 3).</p>
         <div class="flex gap-2 mb-4">
-            <input type="text" id="memberInput" placeholder="Enter member name" class="p-2 border rounded-md w-full">
-            <input type="number" id="weightInput" placeholder="Weight (1-10)" min="1" max="10" class="p-2 border rounded-md w-24">
-            <button onclick="addMember()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Add</button>
+            <input type="text" id="memberInput" placeholder="Enter member name" class="p-2 border rounded-md w-full input-field" title="Enter a unique member name">
+            <input type="number" id="weightInput" placeholder="Weight (1-10)" min="1" max="10" class="p-2 border rounded-md w-24 input-field" title="Enter a weight between 1 and 10">
+            <button onclick="addMember()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 pulse" title="Add the member to the group">Add</button>
         </div>
         <ul class="member-list space-y-2" id="memberList"></ul>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+    <!-- Propose Options Section -->
+    <div class="card p-6 mb-6 slide-up">
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Propose Options</h2>
+        <p class="text-gray-500 text-sm mb-2">Add decision options (e.g., "Save the money", "Spend on food") for voting.</p>
         <div class="flex gap-2 mb-4">
-            <input type="text" id="optionInput" placeholder="Enter option" class="p-2 border rounded-md w-full">
-            <button onclick="addOption()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Add</button>
+            <input type="text" id="optionInput" placeholder="Enter option" class="p-2 border rounded-md w-full input-field" title="Enter a unique decision option">
+            <button onclick="addOption()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 pulse" title="Add the option to the list">Add</button>
         </div>
         <ul class="option-list space-y-2" id="optionList"></ul>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+    <!-- Voting Section -->
+    <div class="card p-6 mb-6 slide-up">
         <div class="flex gap-4 items-center mb-4">
             <label for="thresholdInput" class="text-gray-700">Consensus Threshold (%):</label>
-            <input type="number" id="thresholdInput" value="75" min="1" max="100" class="p-2 border rounded-md w-20">
-            <button onclick="startVoting()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">Start Voting</button>
+            <input type="number" id="thresholdInput" value="75" min="1" max="100" class="p-2 border rounded-md w-20 input-field" title="Set the percentage required for consensus (1-100)">
+            <button onclick="startVoting()" class="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 pulse" title="Begin the voting process">Start Voting</button>
         </div>
         <div id="votingSection" class="hidden mt-4">
             <h2 class="text-xl font-semibold text-gray-700 mb-4">Vote</h2>
+            <p class="text-gray-500 text-sm mb-2">Members select options; weights influence the outcome.</p>
             <div id="votingForms" class="space-y-4"></div>
             <div class="flex gap-2 mt-4">
-                <button onclick="submitVotes()" class="bg-green-600 text-white p-2 rounded-md hover:bg-green-700">Submit Votes</button>
-                <button onclick="resetVoting()" class="bg-gray-600 text-white p-2 rounded-md hover:bg-gray-700">Reset Voting</button>
+                <button onclick="submitVotes()" class="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 pulse" title="Submit all votes and view results">Submit Votes</button>
+                <button onclick="resetVoting()" class="bg-gray-600 text-white p-2 rounded-md hover:bg-gray-700 pulse" title="Reset the process for a new round">Reset Voting</button>
+                <p class="text-gray-500">Scroll down for results after submission</p>
             </div>
         </div>
     </div>
 
-    <div class="bg-white p-6 rounded-lg shadow-md hidden" id="resultsSection">
+    <!-- Results Section -->
+    <div class="card p-6 rounded-lg shadow-md hidden slide-up" id="resultsSection">
         <h2 class="text-xl font-semibold text-gray-700 mb-4">Results</h2>
+        <p class="text-gray-500 text-sm mb-2">See weighted vote outcomes and export the chart as a PNG.</p>
         <canvas id="resultsChart" class="w-full h-64"></canvas>
-        <p id="consensusMessage" class="mt-4 text-center font-medium"></p>
-        <button onclick="exportResults()" class="bg-purple-600 text-white p-2 rounded-md hover:bg-purple-700 mt-4 mx-auto block">Export as PNG</button>
+        <p id="consensusMessage" class="mt-4 text-center font-medium text-green-600"></p>
+        <button onclick="exportResults()" class="btn-export text-white p-2 rounded-md hover:bg-purple-700 mt-4 mx-auto block pulse" title="Download the results chart as a PNG image">Export as PNG</button>
     </div>
 
     <script>
+        // Initialize particles.js background
+        particlesJS("particles-js", {
+            particles: {
+                number: { value: 80, density: { enable: true, value_area: 800 } },
+                color: { value: "#10b981" },
+                shape: { type: "circle" },
+                opacity: { value: 0.5, random: true },
+                size: { value: 3, random: true },
+                line_linked: { enable: false },
+                move: { enable: true, speed: 1, direction: "none", random: true, straight: false }
+            },
+            interactivity: { detectsOn: "canvas", modes: { repulse: { distance: 150 } } },
+            retina_detect: true
+        });
+
         let members = [];
         let options = [];
         let votes = {};
@@ -96,7 +200,7 @@
 
         function updateMemberList() {
             const list = document.getElementById('memberList');
-            list.innerHTML = members.map(m => `<li class="fade-in">${m.name} (Weight: ${m.weight})</li>`).join('');
+            list.innerHTML = members.map(m => `<li class="fade-in flex items-center justify-between bg-gray-50 p-2 rounded-md">${m.name} (Weight: ${m.weight}) <span class="text-green-500"><i class="fas fa-check"></i></span></li>`).join('');
         }
 
         function addOption() {
@@ -111,7 +215,7 @@
 
         function updateOptionList() {
             const list = document.getElementById('optionList');
-            list.innerHTML = options.map(o => `<li class="fade-in">${o}</li>`).join('');
+            list.innerHTML = options.map(o => `<li class="fade-in flex items-center justify-between bg-gray-50 p-2 rounded-md">${o} <span class="text-yellow-500"><i class="fas fa-lightbulb"></i></span></li>`).join('');
         }
 
         function startVoting() {
@@ -124,8 +228,8 @@
             votingSection.classList.remove('hidden');
             votingForms.innerHTML = members.map(m => `
                 <div class="fade-in">
-                    <strong>${m.name} (Weight: ${m.weight}):</strong>
-                    <select id="vote-${m.name}" class="p-2 border rounded-md">
+                    <strong class="text-gray-700">${m.name} (Weight: ${m.weight}):</strong>
+                    <select id="vote-${m.name}" class="p-2 border rounded-md w-full input-field">
                         ${options.map(o => `<option value="${o}">${o}</option>`).join('')}
                     </select>
                 </div>
@@ -167,13 +271,15 @@
                     datasets: [{
                         label: 'Weighted Votes',
                         data: Object.values(votes),
-                        backgroundColor: 'rgba(26, 115, 232, 0.7)',
-                        borderColor: 'rgba(26, 115, 232, 1)',
-                        borderWidth: 1
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
                     }]
                 },
                 options: {
-                    scales: { y: { beginAtZero: true } },
+                    scales: { y: { beginAtZero: true, ticks: { color: '#1f2937' } } },
+                    plugins: { legend: { labels: { color: '#1f2937' } } },
                     animation: { duration: 1000, easing: 'easeInOutQuad' }
                 }
             });
@@ -182,8 +288,8 @@
             const consensusThreshold = totalWeight * threshold;
             const winner = Object.entries(votes).find(([_, v]) => v === maxVotes)[0];
             consensusMessage.textContent = maxVotes >= consensusThreshold
-                ? `Consensus reached! "${winner}" wins with ${maxVotes}/${totalWeight} votes (Threshold: ${Math.ceil(consensusThreshold)}).`
-                : `No consensus. "${winner}" leads with ${maxVotes}/${totalWeight} votes, but needs ${Math.ceil(consensusThreshold)} for consensus.`;
+                ? `🎉 Consensus reached! "${winner}" wins with ${maxVotes}/${totalWeight} votes (Threshold: ${Math.ceil(consensusThreshold)}).`
+                : `⚠️ No consensus. "${winner}" leads with ${maxVotes}/${totalWeight} votes, but needs ${Math.ceil(consensusThreshold)} for consensus.`;
         }
 
         function exportResults() {
@@ -197,11 +303,3 @@
     </script>
 </body>
 </html>
-<!-- 
-    How It Works:
-    - Members: Add names with optional weights (1-10, e.g., "Alice" with weight 3) to influence votes.
-    - Options: Propose choices (e.g., "Pizza", "Sushi").
-    - Voting: Each member votes; weights are applied to tally results.
-    - Results: Bar chart displays weighted votes; consensus is checked against a custom threshold (default 75%).
-    - Extras: Reset voting for new rounds or export results as PNG.
--->
